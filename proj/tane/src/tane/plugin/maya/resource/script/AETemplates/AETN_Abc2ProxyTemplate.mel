@@ -1,0 +1,282 @@
+//--------------------------------------------------------------------------- FileDialog utility
+global proc int TN_Abc2Proxy_CheckModelKeyword(string $renderpath)
+{
+    string $match = `match "_model_" $renderpath`;
+    if(size($match) > 0)
+    {
+        return 1;
+    }
+    else
+    {
+        warning "Failed to find \"_model_\" keyword in render file";
+        return 0;
+    }
+
+}
+global proc string TN_Abc2Proxy_GetProxyFile(string $renderpath)
+{
+    string $tokens[];
+    tokenize($renderpath, "/", $tokens);
+    string $renderfile = $tokens[size($tokens) - 1];
+
+    string $proxyfile  = `substitute "_model_"  $renderfile "_model_low_"`;
+    string $proxypath = `substitute $renderfile $renderpath $proxyfile`;
+
+    return $proxypath;
+}
+
+global proc TN_Abc2Proxy_LoadFile(string $attr, string $textField, string $filter)
+{
+	string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) )
+	{
+		return;
+	}
+	//set filepath attribute (renderfile)
+	string $renderpath = $file[0];
+
+	setAttr -type "string" ($nodename + "." + $attrname) $renderpath;
+	textField -e -tx `getAttr $attr` $textField;
+
+	//find proxy file and set proxypath attribute
+	int $ok = TN_Abc2Proxy_CheckModelKeyword($renderpath);
+	if($ok)
+	{
+		string $proxypath = TN_Abc2Proxy_GetProxyFile($renderpath);
+
+        string $proxyPathAttr;
+        if($attr == "filePath0")
+            $proxyPathAttr= "proxyPath0";
+        if($attr == "filePath1")
+            $proxyPathAttr= "proxyPath1";
+        if($attr == "filePath2")
+            $proxyPathAttr= "proxyPath2";
+		setAttr -type "string" ($nodename + "." + $proxyPathAttr) $proxypath;
+	}
+}
+global proc string TN_Abc2Proxy_GetLabelName(string $attr)
+{
+    string $labelName = "";
+    if($attr == "filePath0")
+       $labelName = "Render File (LOD0)";
+    if($attr == "filePath1")
+       $labelName = "Render File (LOD1)";
+    if($attr == "filePath2")
+       $labelName = "Render File (LOD2)";
+    if($attr == "proxyPath0")
+       $labelName = "Proxy File (LOD0)";
+    if($attr == "proxyPath1")
+       $labelName = "Proxy File (LOD1)";
+    if($attr == "proxyPath2")
+       $labelName = "Proxy File (LOD2)";
+    return $labelName;
+}
+global proc TN_Abc2Proxy_FileBrowerBuild(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $labelName = TN_Abc2Proxy_GetLabelName($attrname);
+
+    setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label $labelName;
+        	string $tfName = ("TN_Abc2Proxy_" + $attrname + "_TextField");
+
+	        textField -ed 1 -tx `getAttr $attr` $tfName;
+        	connectControl $tfName $attr;
+
+            string $btnName = ("TN_Abc2Proxy_" + $attrname + "_Button");
+            symbolButton -image "navButtonBrowse.xpm" $btnName;
+
+            string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+            string $cmd;
+            $cmd = "TN_Abc2Proxy_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ($tfName);
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd $btnName;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+
+global proc TN_Abc2Proxy_FileBrowerUpdate(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $tfName  = ("TN_Abc2Proxy_" + $attrname + "_TextField");
+    string $btnName = ("TN_Abc2Proxy_" + $attrname + "_Button");
+
+
+	connectControl $tfName $attr;
+
+    string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+
+	string $cmd;
+	$cmd = "TN_Abc2Proxy_LoadFile ";
+	$cmd += ($attr + " ");
+    $cmd += ($tfName);
+	$cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd $btnName;
+}
+//--------------------------------------------------------------------------- useLOD1 Changed
+global proc TN_Abc2Proxy_useLOD1Changed(string $node)
+{
+	int $useLOD1 = `getAttr ($node+".useLOD1")`;
+	if(!$useLOD1)
+	{
+		editorTemplate -dc $node "filePath1"          1;
+		editorTemplate -dc $node "objectPath1"        1;
+		editorTemplate -dc $node "proxyPath1"         1;
+		editorTemplate -dc $node "proxyObjectPath1"   1;
+	}
+	else
+	{
+		editorTemplate -dc $node "filePath1"          0;
+		editorTemplate -dc $node "objectPath1"        0;
+		editorTemplate -dc $node "proxyPath1"         0;
+		editorTemplate -dc $node "proxyObjectPath1"   0;
+	}
+}
+//--------------------------------------------------------------------------- useLOD2 Changed
+global proc TN_Abc2Proxy_useLOD2Changed(string $node)
+{
+	int $useLOD2 = `getAttr ($node+".useLOD2")`;
+	if(!$useLOD2)
+	{
+		editorTemplate -dc $node "filePath2"          1;
+		editorTemplate -dc $node "objectPath2"        1;
+		editorTemplate -dc $node "proxyPath2"         1;
+		editorTemplate -dc $node "proxyObjectPath2"   1;
+	}
+	else
+	{
+		editorTemplate -dc $node "filePath2"          0;
+		editorTemplate -dc $node "objectPath2"        0;
+		editorTemplate -dc $node "proxyPath2"         0;
+		editorTemplate -dc $node "proxyObjectPath2"   0;
+	}
+}
+
+
+//--------------------------------------------------------------------------- forceStatic Changed
+global proc TN_Abc2Proxy_forceStaticChanged(string $node)
+{
+	int $forceStatic = `getAttr ($node+".forceStatic")`;
+
+	if(!$forceStatic)
+	{
+		editorTemplate -dc $node "inTime"           0;
+		editorTemplate -dc $node "frameOffset"      0;
+        editorTemplate -dc $node "animCycle"        0;
+
+        int $isConnected = `isConnected "time1.outTime" ($node + ".inTime")`;
+        if(!$isConnected)
+        {
+            connectAttr "time1.outTime" ($node + ".inTime");
+        }
+	}
+	else
+	{
+		editorTemplate -dc $node "inTime"           1;
+		editorTemplate -dc $node "frameOffset"      1;
+        editorTemplate -dc $node "animCycle"        1;
+
+        int $isConnected = `isConnected "time1.outTime" ($node + ".inTime")`;
+        if($isConnected)
+        {
+            disconnectAttr "time1.outTime" ($node + ".inTime");
+        }
+        setAttr ($node + ".inTime") 1.0;
+	}
+}
+
+
+// main //
+global proc AETN_Abc2ProxyTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		editorTemplate -beginLayout "Archive" -collapse 0;
+		{
+            editorTemplate -l "Force Static "	    -ac "forceStatic" TN_Abc2Proxy_forceStaticChanged;
+ 			editorTemplate -l "InTime"	            -ac "inTime";
+            editorTemplate -l "Animation Cycle "	-ac "animCycle";
+ 			editorTemplate -l "Frame Offset"	    -ac "frameOffset";
+ 			editorTemplate -as;
+
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "filePath0";
+            editorTemplate -l "Object path"	                        -ac "objectPath0";
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "proxyPath0";
+            editorTemplate -l "Object path"	                        -ac "proxyObjectPath0";
+ 			editorTemplate -as;
+            editorTemplate -l "Use LOD 1" -ac "useLOD1" TN_Abc2Proxy_useLOD1Changed;
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "filePath1";
+            editorTemplate -l "Object path"	                        -ac "objectPath1";
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "proxyPath1";
+            editorTemplate -l "Object path"	                        -ac "proxyObjectPath1";
+ 			editorTemplate -as;
+            editorTemplate -l "Use LOD 2" -ac "useLOD2" TN_Abc2Proxy_useLOD2Changed;
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "filePath2";
+            editorTemplate -l "Object path"	                        -ac "objectPath2";
+		    editorTemplate -ccu TN_Abc2Proxy_FileBrowerBuild TN_Abc2Proxy_FileBrowerUpdate "proxyPath2";
+            editorTemplate -l "Object path"	                        -ac "proxyObjectPath2";
+ 			editorTemplate -as;
+
+ 		    //editorTemplate -ccu TN_AbcProxy_RenderFileBrowerBuild TN_AbcProxy_RenderFileBrowerUpdate "filepath";
+            //editorTemplate -l "Object path"	                        -ac "objpath";
+            //editorTemplate -l "Use bounding box as proxy"	        -ac "drawAsBBox" TN_AbcProxyDrawAsBBoxChanged;
+ 			//editorTemplate -as;
+            //editorTemplate -ccu TN_AbcProxy_ProxyFileBrowerBuild TN_AbcProxy_ProxyFileBrowerUpdate "proxypath";
+            //editorTemplate -l "Use different object path"	        -ac "useZenvConvention" TN_AbcProxy_UseZenvConventionChanged;
+            //editorTemplate -l "Object path"	                        -ac "objpathForZEnv";
+		}
+		editorTemplate -endLayout;
+
+		editorTemplate -beginLayout "Display" -collapse 0;
+		{
+ 			editorTemplate -l "Display Mode"	    -ac "displayMode";
+ 			editorTemplate -as;
+ 			editorTemplate -l "Color"	            -ac "color";
+
+ 			editorTemplate -l "Draw Bound"	        -ac "drawBound";
+ 			editorTemplate -l "Double Sided"	    -ac "doubleSided";
+ 			editorTemplate -l "No Lighting"	        -ac "noLighting";
+ 			editorTemplate -l "No Wire"	            -ac "noWire";
+
+ 			editorTemplate -beginLayout "Configure" -collapse 1;
+            {
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "ICR";
+            	editorTemplate -l "Enable Icr"	    -ac "enableIcr";
+
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "LOD";
+            	editorTemplate -l "Enable LOD"	    -ac "enableLOD";
+            	editorTemplate -l "Min Distance"	-ac "minDistance";
+            	editorTemplate -l "Max Distance"	-ac "maxDistance";
+            	editorTemplate -l "Override Mask"	-ac "overrideMask";
+            }
+            editorTemplate -endLayout;
+		}
+        editorTemplate -endLayout;
+
+	}
+	editorTemplate -addExtraControls;
+	editorTemplate -endScrollLayout;
+}

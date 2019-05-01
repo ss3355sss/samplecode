@@ -1,0 +1,154 @@
+global proc TN_RegisterResource(string $key, string $value)
+{
+    registerPluginResource("Tane", $key, $value);
+}
+
+global proc TN_InViewMessage (string $message, string $type)
+{
+    int $inViewOpVar = `optionVar -q "TN_InViewMessageEnable"`;
+    if ($type == "Info")
+    {
+        if ($inViewOpVar == 0)
+        {
+            print $message;
+        }
+        else
+        {
+            if (catchQuiet (`inViewMessage -amg (" <span style=\"color:#82C99A;\">Tane:</span> "+ $message) -fst 2000 -dragKill -pos topCenter -fade`))
+            {
+                print $message;
+            }
+        }
+    }
+    else if ($type == "Warning")
+    {
+        if ($inViewOpVar == 0)
+        {
+            warning $message;
+        }
+        else
+        {
+            if (catchQuiet (`inViewMessage -amg ("<span style=\"color:#F4FA58;\">Tane:</span> "+ $message) -fst 2000 -dragKill -pos midCenterTop -fade`))
+            {
+                warning $message;
+            }
+        }
+    }
+    else
+    {
+        if ($inViewOpVar == 0)
+        {
+            error $message;
+        }
+        else
+        {
+            if (catchQuiet (`inViewMessage -amg ("<span style=\"color:#F05A5A;\">Tane:</span> "+ $message) -fst 2000 -dragKill -pos midCenter -fade`))
+            {
+                error $message;
+            }
+        }
+    }
+}
+
+global proc TN_CreateEnvironmentNetworkProc()
+{
+    string $nodes[]  = `ls -sl -dag -lf -l -s`;
+
+    if(!size($nodes) > 0)
+    {
+        return;
+    }
+    int $i = 0;
+    for($i = 0; $i < size($nodes); $i++)
+    {
+        //TODO::check body type
+        TN_CreateEnvironmentNetwork -ib $nodes[$i];
+    }
+}
+
+
+global proc TN_TaneMenu( string $parent )
+{
+ 	setParent -m $parent;
+ 	if( `menu -q -ni $parent` != 0 )
+ 	{
+ 	    return; // check if menu is built already
+ 	}
+    menuItem -l "Start from Template" -ec 1 -subMenu true  TN_StartFromTemplate_Item;
+        menuItem -l "Environment" -ec 1 -c "TN_CreateEnvironmentNetworkProc" TN_CreateEnvironmentNetworkProc_Item;
+
+    menuItem -divider true;
+
+    setParent -menu ..;
+}
+
+global proc TN_CreateTaneMenu()
+{
+	// maya menus
+	global string $gMainWindow;
+	global string $gMainHelpMenu;
+	// Tane menu
+	global string $gTaneMenu;
+
+	if( `menu -exists TaneMainMenu` ) { deleteUI TaneMainMenu; }
+
+	setParent $gMainWindow;
+	$gTaneMenu = `menu -l "Tane" -to true -pmo true TaneMainMenu`;
+	menu -e -pmc ( "TN_TaneMenu " + $gTaneMenu ) $gTaneMenu;
+
+	hotBox -um;
+}
+
+global proc TN_DeleteTaneMenu()
+{
+    //if( `menu -exists TaneMainMenu` ) { deleteUI TaneMainMenu; }
+}
+
+
+
+global proc int TN_TaneInit()
+{
+    //--------------------------- register optionVar
+    if (!`optionVar -exists TN_InViewMessageEnable`)
+    {
+        optionVar -iv TN_InViewMessageEnable 1;
+    }
+    //--------------------------- register resource strings
+    TN_RegisterResource("kDisconnectedNodes", "Disconnected ^1s from ^2s");
+    TN_RegisterResource("kConnectedTheseNodes", "Connected ^1s to ^2s");
+    TN_RegisterResource("kIncompatibleTypes", "Incompatible node types. ^1s and ^2s");
+    TN_RegisterResource("kTypeNotSelected", "No ^1s selected.");
+    TN_RegisterResource("kDragDropType", "Accepts: ");
+    TN_RegisterResource("kShowInOutliner", "Show in Outliner");
+    TN_RegisterResource("kBreakConnection", "Break Connection");
+    TN_RegisterResource("kConnect", "Connect");
+    TN_RegisterResource("kConnected", "Connected: ");
+    TN_RegisterResource("kTo", " to ");
+    TN_RegisterResource("kIncompatibleNodes", "Incompatible node types: ");
+    TN_RegisterResource("kAnd", " and ");
+    TN_RegisterResource("kDisconnected", "Disconnected: ");
+    TN_RegisterResource("kFrom", " from ");
+    TN_RegisterResource("kNotConnected", "Not Connected");
+    TN_RegisterResource("kNoMeshFound", "Mesh not found under transform.");
+    TN_RegisterResource("kDisabled", "Disabled");
+    TN_RegisterResource("kClone", "Clone");
+    TN_RegisterResource("kCreate", "Create"); // also used for the create menu
+    TN_RegisterResource("kCreated", "Created");
+    TN_RegisterResource("kNo", "No");
+    TN_RegisterResource("kSelected", "selected");
+    TN_RegisterResource("kFalloffNoInputs", "Falloff node has no input connection");
+    TN_RegisterResource("kDisplayAsWireframe", "Display as Wireframe");
+
+    //--------------------------- import py modules
+    python("import AETemplateHelper");
+    python("import AETN_UsdProxyTemplate");
+    python("import AETN_UsdHdProxyTemplate");
+
+    python("import maya.cmds as cmds;");
+    python("import maya.mel as mel;");
+    python("import TaneUtil;");
+
+    return 1;
+}
+
+TN_TaneInit();

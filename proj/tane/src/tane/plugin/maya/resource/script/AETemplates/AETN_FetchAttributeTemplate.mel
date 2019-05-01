@@ -1,0 +1,15 @@
+//--------------------------------------------------------------------------- InSources ccu
+// main //
+global proc AETN_FetchAttributeTemplate( string $node )
+{
+    editorTemplate -beginScrollLayout;
+    {
+        editorTemplate -beginLayout "Status" -collapse 0;
+    	{
+            editorTemplate -l "Target Id"	            -ac "id";
+        }
+        editorTemplate -endLayout;
+    	editorTemplate -addExtraControls;
+    }
+    editorTemplate -endScrollLayout;
+}

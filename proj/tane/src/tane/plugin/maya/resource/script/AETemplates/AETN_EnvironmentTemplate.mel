@@ -1,0 +1,447 @@
+//--------------------------------------------------------------------------- InSources ccu
+global proc AETN_Environment_InSourceBuild( string $nodeName )
+{
+    python("import AETN_EnvironmentTemplate");
+    $nodeName = python("'" + $nodeName + "'.rstrip('.')");
+    string $parent = `setParent -q`;
+    python("AETN_EnvironmentTemplate.build_qt_widget('" + $parent + "', '" + $nodeName + "')");
+}
+
+global proc AETN_Environment_InSourceUpdate( string $nodeName )
+{
+    $nodeName = python("'" + $nodeName + "'.rstrip('.')");
+    string $parent = `setParent -q`;
+    python("AETN_EnvironmentTemplate.update_qt_widget('" + $parent + "', '" + $nodeName + "')");
+
+}
+
+
+//--------------------------------------------------------------------------- InSource ccu
+global proc AETN_Environment_InBodyBuild(string $nodeName)
+{
+    string $buffer[];
+    tokenize($nodeName, ".", $buffer);
+    $nodeName = $buffer[0];
+
+    rowLayout -numberOfColumns 2 -columnWidth2 139 250 inBody_Layout;
+    text -w 105
+         -h 20
+         -vis 1
+         -label "In Body"
+         -align "right"
+         -font "plainLabelFont" ;
+    python("AETemplateHelper.build_qt_widget('inBody_Layout', '" + $nodeName + "', 'mesh', 'inBody', 'worldMesh', 'SwitchToMeshMode')");
+    setParent..;
+
+}
+global proc AETN_Environment_InBodyUpdate(string $nodeName)
+{
+    string $buffer[];
+    tokenize($nodeName, ".", $buffer);
+    $nodeName = $buffer[0];
+    python("import AETN_EnvironmentTemplate");
+    string $parent = "inBody_Layout";
+    python("AETemplateHelper.update_qt_widget('inBody_Layout', '" + $nodeName + "', 'mesh', 'inBody', 'worldMesh', 'SwitchToMeshMode')");
+}
+
+
+//--------------------------------------------------------------------------- Use UpVector Changed
+global proc AETN_Environment_UseUpVectorChanged(string $node)
+{
+	int $useUpVector = `getAttr ($node+".useUpVector")`;
+
+	if($useUpVector)
+	{
+	    editorTemplate -dc $node "upVector"	0;
+	}
+	else
+	{
+	    editorTemplate -dc $node "upVector"	1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use Density Map Changed
+global proc AETN_Environment_UseDensityMapChanged(string $node)
+{
+	int $useDensityMap = `getAttr ($node+".useDensityMap")`;
+
+	if($useDensityMap)
+	{
+		editorTemplate -dc $node "densityMap"           0;
+		editorTemplate -dc $node "shiftDensityValue"    0;
+	}
+	else
+	{
+	    editorTemplate -dc $node "densityMap"           1;
+		editorTemplate -dc $node "shiftDensityValue"    1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use Remove Map Changed
+global proc AETN_Environment_UseRemoveMapChanged(string $node)
+{
+	int $useRemoveMap = `getAttr ($node+".useRemoveMap")`;
+
+	if($useRemoveMap)
+	{
+	    editorTemplate -dc $node "removeMap"	        0;
+		editorTemplate -dc $node "removeEpsilon"        0;
+	}
+	else
+	{
+	    editorTemplate -dc $node "removeMap"	        1;
+		editorTemplate -dc $node "removeEpsilon"        1;
+	}
+}
+//--------------------------------------------------------------------------- Use Scale Map Changed
+global proc AETN_Environment_UseScaleMapChanged(string $node)
+{
+	int $useScaleMap = `getAttr ($node+".useScaleMap")`;
+
+	if($useScaleMap)
+	{
+        editorTemplate -dc $node "scaleMap"	            0;
+		editorTemplate -dc $node "shiftScaleValue"      0;
+	}
+	else
+	{
+        editorTemplate -dc $node "scaleMap"	            1;
+		editorTemplate -dc $node "shiftScaleValue"      1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use Sampling Scheme Changed
+global proc AETN_Environment_UseSamplingSchemeChanged(string $node)
+{
+	int $useSamplingScheme = `getAttr ($node+".useSamplingScheme")`;
+
+	if($useSamplingScheme)
+	{
+		editorTemplate -dc $node "radius"               0;
+		editorTemplate -dc $node "useRadiusMap"         0;
+
+    	int $useRadiusMap = `getAttr ($node+".useRadiusMap")`;
+    	if($useRadiusMap)
+    	{
+	    	editorTemplate -dc $node "shiftRadiusValue"     0;
+    		editorTemplate -dc $node "radiusMap"            0;
+    	}
+    	else
+    	{
+	    	editorTemplate -dc $node "shiftRadiusValue"     1;
+    		editorTemplate -dc $node "radiusMap"            1;
+    	}
+	}
+	else
+	{
+		editorTemplate -dc $node "radius"               1;
+		editorTemplate -dc $node "useRadiusMap"         1;
+		editorTemplate -dc $node "shiftRadiusValue"     1;
+		editorTemplate -dc $node "radiusMap"            1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use Radius Map Changed
+global proc AETN_Environment_UseRadiusMapChanged(string $node)
+{
+	int $useRadiusMap = `getAttr ($node+".useRadiusMap")`;
+
+	if($useRadiusMap)
+	{
+		editorTemplate -dc $node "shiftRadiusValue"     0;
+		editorTemplate -dc $node "radiusMap"            0;
+	}
+	else
+	{
+		editorTemplate -dc $node "shiftRadiusValue"     1;
+		editorTemplate -dc $node "radiusMap"            1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use FaceAngle Changed
+global proc AETN_Environment_UseFaceAngleChanged(string $node)
+{
+	int $useFaceAngle = `getAttr ($node+".useFaceAngle")`;
+
+	if($useFaceAngle)
+	{
+		editorTemplate -dc $node "faceAngleRange"    0;
+	}
+	else
+	{
+	    editorTemplate -dc $node "faceAngleRange"    1;
+	}
+}
+
+//--------------------------------------------------------------------------- Use UniformScale Changed
+global proc AETN_Environment_UseUniformScaleChanged(string $node)
+{
+	int $useUniformScale = `getAttr ($node+".useUniformScale")`;
+
+	if($useUniformScale)
+	{
+		editorTemplate -dc $node "uniformScaleRange"    0;
+		editorTemplate -dc $node "xScaleRange"          1;
+		editorTemplate -dc $node "yScaleRange"          1;
+		editorTemplate -dc $node "zScaleRange"          1;
+	}
+	else
+	{
+		editorTemplate -dc $node "uniformScaleRange"    1;
+		editorTemplate -dc $node "xScaleRange"          0;
+		editorTemplate -dc $node "yScaleRange"          0;
+		editorTemplate -dc $node "zScaleRange"          0;
+	}
+}
+global proc AETN_Environment_LoadFile(string $attr, string $textField, string $filter)
+{
+	string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) )
+	{
+		return;
+	}
+	
+	//set filepath attribute (renderfile)
+	string $filePath = $file[0];
+
+	setAttr -type "string" ($nodename + "." + $attrname) $filePath;
+	textField -e -tx `getAttr $attr` $textField;
+}
+
+
+global proc AETN_Environment_FileBrowerBuild(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $labelName = "";
+	if($attrname == "densityMap")
+		$labelName = "Density Map";
+	if($attrname == "scaleMap")
+		$labelName = "Scale Map";
+	if($attrname == "removeMap")
+		$labelName = "RemoveMap Map";
+	if($attrname == "radiusMap")
+		$labelName = "Distance Map";
+    setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label $labelName;
+   
+			string $tfName = ("AETN_Environment_" + $attrname + "_TextField");
+
+	        textField -ed 1 -tx `getAttr $attr` $tfName;
+        	connectControl $tfName $attr;
+
+            string $btnName = ("AETN_Environment_" + $attrname + "_Button");
+            symbolButton -image "navButtonBrowse.xpm" $btnName;
+
+			string $filefilter  = "Image Files(*.jpeg *.iff *.tiff *.jpg);;All Files (*.*)";
+			string $cmd;
+            $cmd = "AETN_Environment_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ($tfName);
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd $btnName;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+global proc AETN_Environment_FileBrowerUpdate(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $tfName  = ("AETN_Environment_" + $attrname + "_TextField");
+    string $btnName = ("AETN_Environment_" + $attrname + "_Button");
+	connectControl $tfName $attr;
+
+	string $filefilter  = "Image Files(*.jpeg *.iff *.tiff *.jpg);;All Files (*.*)";
+	string $cmd;
+    $cmd = "AETN_Environment_LoadFile ";
+    $cmd += ($attr + " ");
+    $cmd += ($tfName);
+    $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd $btnName;
+}
+
+global proc AETN_Environment_ImportCacheChanged(string $node)
+{
+	int $importCache = `getAttr ($node+".importCache")`;
+
+	if($importCache)
+	{
+		editorTemplate -dc $node "cacheFile"            0;
+		editorTemplate -dc $node "importCacheRatio"     0;
+	}
+	else
+	{
+		editorTemplate -dc $node "cacheFile"            1;
+		editorTemplate -dc $node "importCacheRatio"     1;
+	}
+}
+global proc AETN_Environment_ImportCacheFileBrowserBuild(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $labelName = "cacheFile";
+    setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label $labelName;
+
+			string $tfName = ("AETN_Environment_" + $attrname + "_TextField");
+
+	        textField -ed 1 -tx `getAttr $attr` $tfName;
+        	connectControl $tfName $attr;
+
+            string $btnName = ("AETN_Environment_" + $attrname + "_Button");
+            symbolButton -image "navButtonBrowse.xpm" $btnName;
+
+        	string $filefilter  = "Image Files(*.usd);;All Files (*.*)";
+			string $cmd;
+            $cmd = "AETN_Environment_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ($tfName);
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd $btnName;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+global proc AETN_Environment_ImportCacheFileBrowserUpdate(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $tfName  = ("AETN_Environment_" + $attrname + "_TextField");
+    string $btnName = ("AETN_Environment_" + $attrname + "_Button");
+	connectControl $tfName $attr;
+
+	string $filefilter  = "Image Files(*.usd);;All Files (*.*)";
+	string $cmd;
+    $cmd = "AETN_Environment_LoadFile ";
+    $cmd += ($attr + " ");
+    $cmd += ($tfName);
+    $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd $btnName;
+}
+
+
+
+// main //
+global proc AETN_EnvironmentTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		editorTemplate -beginLayout "Sources" -collapse 0;
+		{
+		    editorTemplate -callCustom "AETN_Environment_InSourceBuild" "AETN_Environment_InSourceUpdate" "";
+		}
+        editorTemplate -endLayout;
+
+		//editorTemplate -beginLayout "Import Cache" -collapse 0;
+		//{
+		//    editorTemplate -l "Import Cache"	        -ac "importCache"         AETN_Environment_ImportCacheChanged;
+		//    editorTemplate -l "In Time"	                -ac "inTime";
+        //    editorTemplate -ccu AETN_Environment_ImportCacheFileBrowserBuild AETN_Environment_ImportCacheFileBrowserUpdate "cacheFile";
+		//    editorTemplate -l "Seed "	                -ac "importSeed";
+		//    editorTemplate -l "Importing Ratio"	        -ac "importCacheRatio";
+		//    editorTemplate -l "Apply Variation"	        -ac "applyVariation";
+		//    editorTemplate -l "Apply SourceID Ratio"	-ac "applySidRatio";
+		//}
+        //editorTemplate -endLayout;
+
+		editorTemplate -beginLayout "Scatter" -collapse 0;
+		{
+    	    editorTemplate -l "Seed"	                -ac "seed";
+	    	editorTemplate -l "Target Points"	        -ac "npoints";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "In Body";
+			editorTemplate -ccu AETN_Environment_InBodyBuild AETN_Environment_InBodyUpdate "inBody";
+			editorTemplate -l "UV Set Name"	            -ac "uvSetName";
+		    editorTemplate -as;
+
+		    editorTemplate -l "Scatter Type"	        -ac "distributionType";
+		    editorTemplate -l "Use Up Vector"	        -ac "useUpVector"           AETN_Environment_UseUpVectorChanged;
+		    editorTemplate -l "Up Vector"	            -ac "upVector";
+            editorTemplate -as;
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Face Angle";
+            editorTemplate -l "Use Face Angle"	        -ac "useFaceAngle"          AETN_Environment_UseFaceAngleChanged;
+            editorTemplate -l "Face Angle Range"	    -ac "faceAngleRange";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Density Map";
+            editorTemplate -l "Use Density Map"	        -ac "useDensityMap"         AETN_Environment_UseDensityMapChanged;
+            editorTemplate -l "Offset Value"	        -ac "shiftDensityValue";
+		    editorTemplate -ccu AETN_Environment_FileBrowerBuild AETN_Environment_FileBrowerUpdate "densityMap";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Remove Map";
+            editorTemplate -l "Use Remove Map"	        -ac "useRemoveMap"          AETN_Environment_UseRemoveMapChanged;
+            editorTemplate -l "Remove Value"	        -ac "removeEpsilon";
+		    editorTemplate -ccu AETN_Environment_FileBrowerBuild AETN_Environment_FileBrowerUpdate "removeMap";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Scale Map";
+            editorTemplate -l "Use Scale Map"	        -ac "useScaleMap"         AETN_Environment_UseScaleMapChanged;
+            editorTemplate -l "Offset Value"	        -ac "shiftScaleValue";
+ 		    editorTemplate -ccu AETN_Environment_FileBrowerBuild AETN_Environment_FileBrowerUpdate "scaleMap";
+			editorTemplate -as;
+
+			//editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Uniform Distance";
+            //editorTemplate -l "Use Uniform Distance "	-ac "useSamplingScheme"     AETN_Environment_UseSamplingSchemeChanged;
+            //editorTemplate -l "Distance"	            -ac "radius";
+            //editorTemplate -l "Use Distance Map"	    -ac "useRadiusMap"          AETN_Environment_UseRadiusMapChanged;
+            //editorTemplate -l "Offset Value"	        -ac "shiftRadiusValue";
+		    //editorTemplate -ccu AETN_Environment_FileBrowerBuild AETN_Environment_FileBrowerUpdate "radiusMap";
+
+        }
+        editorTemplate -endLayout;
+
+        editorTemplate -beginLayout "Random" -collapse 0;
+		{
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Translation";
+            editorTemplate -l "Translate Y"	    -ac "yTranslateRange";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Rotaiton";
+            editorTemplate -l "Rotation X"	    -ac "xRotateRange";
+            editorTemplate -l "Rotation Y"	    -ac "yRotateRange";
+            editorTemplate -l "Rotation Z"	    -ac "zRotateRange";
+
+			editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "Scale";
+            editorTemplate -l "Use Uniform Scale"	-ac "useUniformScale"       AETN_Environment_UseUniformScaleChanged;
+            editorTemplate -l "Uniform Scale"	    -ac "uniformScaleRange";
+            editorTemplate -l "Scale X"	            -ac "xScaleRange";
+            editorTemplate -l "Scale Y"	            -ac "yScaleRange";
+            editorTemplate -l "Scale Z"	            -ac "zScaleRange";
+
+		}
+        editorTemplate -endLayout;
+
+		editorTemplate -addExtraControls;
+	}
+	editorTemplate -endScrollLayout;
+}

@@ -1,0 +1,139 @@
+//--------------------------------------------------------------------------- FileDialog utility
+global proc TN_UsdProxy_LoadFile(string $attr, string $textField, string $filter)
+{
+	string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) )
+	{
+		return;
+	}
+	//set filepath attribute (renderfile)
+	string $renderpath = $file[0];
+
+	setAttr -type "string" ($nodename + "." + $attrname) $renderpath;
+	textField -e -tx `getAttr $attr` $textField;
+}
+global proc TN_UsdProxy_FileBrowerBuild(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $labelName = "File Path";
+
+    setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label $labelName;
+        	string $tfName = ("TN_UsdProxy_" + $attrname + "_TextField");
+
+	        textField -ed 1 -tx `getAttr $attr` $tfName;
+        	connectControl $tfName $attr;
+
+            string $btnName = ("TN_UsdProxy_" + $attrname + "_Button");
+            symbolButton -image "navButtonBrowse.xpm" $btnName;
+
+            string $filefilter  = "Usd Files(*.usd);Usda Files(*.usda);All Files (*.*)";
+            string $cmd;
+            $cmd = "TN_UsdProxy_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ($tfName);
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd $btnName;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+
+global proc TN_UsdProxy_FileBrowerUpdate(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $tfName  = ("TN_UsdProxy_" + $attrname + "_TextField");
+    string $btnName = ("TN_UsdProxy_" + $attrname + "_Button");
+
+	connectControl $tfName $attr;
+
+    string $filefilter  = "USD Files(*.usd *.usda);All Files (*.*)";
+
+	string $cmd;
+	$cmd = "TN_UsdProxy_LoadFile ";
+	$cmd += ($attr + " ");
+    $cmd += ($tfName);
+	$cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd $btnName;
+}
+global proc AETN_UsdProxy_VariantSetsNew(string $attr)
+{
+    python("AETN_UsdProxyTemplate.variantSetsReplace('"+$attr+"', new=True)");
+
+}
+global proc AETN_UsdProxy_VariantSetsReplace(string $attr)
+{
+    python("AETN_UsdProxyTemplate.variantSetsReplace('"+$attr+"', new=False)");
+}
+
+// main //
+global proc AETN_UsdProxyTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		editorTemplate -beginLayout "Archive" -collapse 0;
+		{
+ 			editorTemplate -l "InTime"	            -ac "inTime";
+            editorTemplate -l "Animation Cycle "	-ac "animCycle";
+ 			editorTemplate -l "Frame Offset"	    -ac "frameOffset";
+ 			editorTemplate -as;
+
+            editorTemplate -l "Purpose"   -ac "purpose";
+		    editorTemplate -ccu TN_UsdProxy_FileBrowerBuild TN_UsdProxy_FileBrowerUpdate "renderFile";
+            editorTemplate -l "Prim path" -ac "primPath";
+		}
+		editorTemplate -endLayout;
+
+        editorTemplate -ccu AETN_UsdProxy_VariantSetsNew AETN_UsdProxy_VariantSetsReplace "";
+
+		editorTemplate -beginLayout "Display" -collapse 0;
+		{
+ 			editorTemplate -l "Display Mode"	    -ac "displayMode";
+ 			editorTemplate -as;
+ 			editorTemplate -l "Color"	            -ac "color";
+
+ 			editorTemplate -l "Draw Bound"	        -ac "drawBound";
+ 			editorTemplate -l "Double Sided"	    -ac "doubleSided";
+ 			editorTemplate -l "No Lighting"	        -ac "noLighting";
+ 			editorTemplate -l "No Wire"	            -ac "noWire";
+
+ 			editorTemplate -beginLayout "Viewport2 Configure" -collapse 1;
+            {
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "ICR";
+            	editorTemplate -l "Enable Icr"	    -ac "enableIcr";
+
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "LOD";
+            	editorTemplate -l "Enable LOD"	    -ac "enableLOD";
+            	editorTemplate -l "Min Distance"	-ac "minDistance";
+            	editorTemplate -l "Max Distance"	-ac "maxDistance";
+            	editorTemplate -l "Override Mask"	-ac "overrideMask";
+            }
+            editorTemplate -endLayout;
+		}
+        editorTemplate -endLayout;
+
+
+	}
+	editorTemplate -addExtraControls;
+	editorTemplate -endScrollLayout;
+}

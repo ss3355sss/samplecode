@@ -1,0 +1,267 @@
+global proc int TN_AbcProxy_CheckModelKeyword(string $renderpath)
+{
+    string $match = `match "_model_" $renderpath`;
+    if(size($match) > 0)
+    {
+        return 1;
+    }
+    else
+    {
+        warning "Failed to find \"_model_\" keyword in render file";
+        return 0;
+    }
+    
+}
+global proc string TN_AbcProxy_GetProxyFile(string $renderpath)
+{
+    string $tokens[];
+    tokenize($renderpath, "/", $tokens);
+    string $renderfile = $tokens[size($tokens) - 1];
+
+    string $proxyfile  = `substitute "_model_"  $renderfile "_model_low_"`;
+    string $proxypath = `substitute $renderfile $renderpath $proxyfile`;
+
+    return $proxypath;
+}
+
+global proc TN_AbcProxy_LoadFile(string $attr, string $textField, string $filter)
+{
+	string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) )
+	{
+		return;
+	}
+
+	//set filepath attribute (renderfile)
+	string $renderpath = $file[0];
+
+	setAttr -type "string" ($nodename + ".renderFile") $renderpath;
+	textField -e -tx `getAttr $attr` $textField;
+
+	//find proxy file and set proxypath attribute
+	int $ok = TN_AbcProxy_CheckModelKeyword($renderpath);
+	if($ok)
+	{
+		string $proxypath = TN_AbcProxy_GetProxyFile($renderpath);
+		setAttr -type "string" ($nodename + ".proxyFile") $proxypath;
+
+	}
+
+}
+
+//--------------------------------------------------------------------------- RenderFile Dialog
+global proc TN_AbcProxy_RenderFileBrowerBuild(string $attr)
+{
+	setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label "Render File";
+	        textField -ed 1 -tx `getAttr $attr` TN_AbcProxy_RenderfileTf;
+        	connectControl TN_AbcProxy_RenderfileTf $attr;
+
+            symbolButton -image "navButtonBrowse.xpm" TN_AbcProxy_RenderfileBtn;
+
+            string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+            string $cmd;
+            $cmd = "TN_AbcProxy_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ("TN_AbcProxy_RenderfileTf ");
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd TN_AbcProxy_RenderfileBtn;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+global proc TN_AbcProxy_RenderFileBrowerUpdate(string $attr)
+{
+	connectControl TN_AbcProxy_RenderfileTf $attr;
+
+    string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+
+	string $cmd;
+	$cmd = "TN_AbcProxy_LoadFile ";
+	$cmd += ($attr + " ");
+	$cmd += ("TN_AbcProxy_RenderfileTf ");
+	$cmd += ("\"" + $filefilter + "\"; refresh;");
+	
+	symbolButton -e -c $cmd TN_AbcProxy_RenderfileBtn;
+}
+//--------------------------------------------------------------------------- ProxyFile Dialog
+global proc TN_AbcProxy_ProxyFileBrowerBuild(string $attr)
+{
+	setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label "Proxy File";
+	        textField -ed 1 -tx `getAttr $attr` TN_AbcProxy_ProxyfileTf;
+        	connectControl TN_AbcProxy_ProxyfileTf $attr;
+
+            symbolButton -image "navButtonBrowse.xpm" TN_AbcProxy_ProxyfileBtn;
+            string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+            string $cmd;
+            $cmd = "TN_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ("TN_AbcProxy_ProxyfileTf ");
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd TN_AbcProxy_ProxyfileBtn;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+
+
+}
+global proc TN_AbcProxy_ProxyFileBrowerUpdate(string $attr)
+{
+	connectControl TN_AbcProxy_ProxyfileTf $attr;
+
+    string $filefilter  = "Abc Files(*.abc);;All Files (*.*)";
+
+	string $cmd;
+	$cmd = "TN_LoadFile ";
+	$cmd += ($attr + " ");
+	$cmd += ("TN_AbcProxy_ProxyfileTf ");
+	$cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd TN_AbcProxy_ProxyfileBtn;
+}
+
+global proc TN_AbcProxy_UseProxyFileChanged(string $node)
+{
+	int $useProxyFile = `getAttr ($node+".useProxyFile")`;
+
+	if($useProxyFile)
+	{
+	    editorTemplate -dc $node "proxyFile"            1;
+	    editorTemplate -dc $node "useProxyObjectPath"   1;
+	    editorTemplate -dc $node "proxyObjectPath"       1;
+	}
+	else
+	{
+	    editorTemplate -dc $node "proxyFile"            0;
+	    editorTemplate -dc $node "useProxyObjectPath"   0;
+
+    	int $useProxyObjectPath = `getAttr ($node+".useProxyObjectPath")`;
+        if($useProxyObjectPath)
+        {
+            editorTemplate -dc $node "proxyObjectPath"   0;
+        }
+        else
+        {
+            editorTemplate -dc $node "proxyObjectPath"   1;
+        }
+	}
+}
+
+
+global proc TN_AbcProxy_UseProxyObjectPathChanged(string $node)
+{
+	int $useProxyObjectPath = `getAttr ($node+".useProxyObjectPath")`;
+
+	if($useProxyObjectPath)
+	{
+	    editorTemplate -dc $node "proxyObjectPath"   0;
+	}
+	else
+	{
+	    editorTemplate -dc $node "proxyObjectPath"   1;
+	}
+}
+
+//--------------------------------------------------------------------------- forceStatic Changed
+global proc TN_AbcProxy_forceStaticChanged(string $node)
+{
+	int $forceStatic = `getAttr ($node+".forceStatic")`;
+
+	if(!$forceStatic)
+	{
+		editorTemplate -dc $node "inTime"           0;
+		editorTemplate -dc $node "frameOffset"      0;
+        editorTemplate -dc $node "animCycle"        0;
+
+        int $isConnected = `isConnected "time1.outTime" ($node + ".inTime")`;
+        if(!$isConnected)
+        {
+            connectAttr "time1.outTime" ($node + ".inTime");
+        }
+	}
+	else
+	{
+		editorTemplate -dc $node "inTime"           1;
+		editorTemplate -dc $node "frameOffset"      1;
+        editorTemplate -dc $node "animCycle"        1;
+
+        int $isConnected = `isConnected "time1.outTime" ($node + ".inTime")`;
+        if($isConnected)
+        {
+            disconnectAttr "time1.outTime" ($node + ".inTime");
+        }
+        setAttr ($node + ".inTime") 1.0;
+	}
+}
+
+// main //
+global proc AETN_AbcProxyTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		editorTemplate -beginLayout "Archive" -collapse 0;
+		{
+            editorTemplate -l "Force Static "	    -ac "forceStatic" TN_AbcProxy_forceStaticChanged;
+ 			editorTemplate -l "InTime"	            -ac "inTime";
+            editorTemplate -l "Animation Cycle "	-ac "animCycle";
+ 			editorTemplate -l "Frame Offset"	    -ac "frameOffset";
+ 			editorTemplate -as;
+ 		    editorTemplate -ccu TN_AbcProxy_RenderFileBrowerBuild TN_AbcProxy_RenderFileBrowerUpdate "renderFile";
+            editorTemplate -l "Object path"	                        -ac "renderObjectPath";
+            editorTemplate -l "Use bounding box as proxy"	        -ac "useProxyFile" TN_AbcProxy_UseProxyFileChanged;
+ 			editorTemplate -as;
+            editorTemplate -ccu TN_AbcProxy_ProxyFileBrowerBuild TN_AbcProxy_ProxyFileBrowerUpdate "proxyFile";
+            editorTemplate -l "Use different object path"	        -ac "useProxyObjectPath" TN_AbcProxy_UseProxyFileChanged;
+            editorTemplate -l "Object path"	                        -ac "proxyObjectPath";
+		}
+		editorTemplate -endLayout;
+
+		editorTemplate -beginLayout "Display" -collapse 0;
+		{
+ 			editorTemplate -l "Display Mode"	    -ac "displayMode";
+ 			editorTemplate -as;
+ 			editorTemplate -l "Color"	            -ac "color";
+
+ 			editorTemplate -l "Draw Bound"	        -ac "drawBound";
+ 			editorTemplate -l "Double Sided"	    -ac "doubleSided";
+ 			editorTemplate -l "No Lighting"	        -ac "noLighting";
+ 			editorTemplate -l "No Wire"	            -ac "noWire";
+
+ 			editorTemplate -beginLayout "Viewport2 Configure" -collapse 1;
+            {
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "ICR";
+            	editorTemplate -l "Enable Icr"	    -ac "enableIcr";
+
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "LOD";
+            	editorTemplate -l "Enable LOD"	    -ac "enableLOD";
+            	editorTemplate -l "Min Distance"	-ac "minDistance";
+            	editorTemplate -l "Max Distance"	-ac "maxDistance";
+            	editorTemplate -l "Override Mask"	-ac "overrideMask";
+            }
+            editorTemplate -endLayout;
+		}
+        editorTemplate -endLayout;
+
+
+
+	}
+	editorTemplate -addExtraControls;
+	editorTemplate -endScrollLayout;
+}

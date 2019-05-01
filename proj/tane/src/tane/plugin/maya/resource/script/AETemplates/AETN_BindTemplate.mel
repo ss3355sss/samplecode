@@ -1,0 +1,182 @@
+//--------------------------------------------------------------------------- InSources ccu
+global proc AETN_BindTemplate_InSourceBuild( string $nodeName )
+{
+    python("import AETN_BindTemplate");
+    $nodeName = python("'" + $nodeName + "'.rstrip('.')");
+    string $parent = `setParent -q`;
+    python("AETN_BindTemplate.build_qt_widget('" + $parent + "', '" + $nodeName + "')");
+}
+
+global proc AETN_BindTemplate_InSourceUpdate( string $nodeName )
+{
+    $nodeName = python("'" + $nodeName + "'.rstrip('.')");
+    string $parent = `setParent -q`;
+    python("AETN_BindTemplate.update_qt_widget('" + $parent + "', '" + $nodeName + "')");
+
+}
+global proc AETN_BindTemplate_LoadFile(string $attr, string $textField, string $filter)
+{
+	string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) )
+	{
+		return;
+	}
+
+	//set filepath attribute (renderfile)
+	string $filePath = $file[0];
+
+	setAttr -type "string" ($nodename + "." + $attrname) $filePath;
+	textField -e -tx `getAttr $attr` $textField;
+}
+global proc AETN_BindTemplate_FileBrowerBuild(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+	string $labelName = "File";
+    setUITemplate -pst attributeEditorTemplate;
+	{
+        rowLayout -nc 3;
+        {
+        	text -label $labelName;
+
+			string $tfName = ("AETN_Bind_" + $attrname + "_TextField");
+
+	        textField -ed 1 -tx `getAttr $attr` $tfName;
+        	connectControl $tfName $attr;
+
+            string $btnName = ("AETN_Bind_" + $attrname + "_Button");
+            symbolButton -image "navButtonBrowse.xpm" $btnName;
+
+        	string $filefilter  = "Usd Files(*.usd *.usda);;All Files (*.*)";
+			string $cmd;
+            $cmd = "AETN_BindTemplate_LoadFile ";
+            $cmd += ($attr + " ");
+            $cmd += ($tfName);
+            $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+            symbolButton -e -c $cmd $btnName;
+
+    		setParent ..;
+        }
+	}
+	setUITemplate -ppt;
+}
+global proc AETN_BindTemplate_FileBrowerUpdate(string $attr)
+{
+    string $tokens[];
+	tokenize $attr "." $tokens;
+	string $nodename = $tokens[0];
+	string $attrname = $tokens[1];
+
+    string $tfName  = ("AETN_Bind_" + $attrname + "_TextField");
+    string $btnName = ("AETN_Bind_" + $attrname + "_Button");
+	connectControl $tfName $attr;
+
+	string $filefilter  = "Usd Files(*.usd *.usda);;All Files (*.*)";
+	string $cmd;
+    $cmd = "AETN_BindTemplate_LoadFile ";
+    $cmd += ($attr + " ");
+    $cmd += ($tfName);
+    $cmd += ("\"" + $filefilter + "\"; refresh;");
+
+	symbolButton -e -c $cmd $btnName;
+}
+
+global proc AETN_BindTemplate_InBodyBuild(string $nodeName)
+{
+    string $buffer[];
+    tokenize($nodeName, ".", $buffer);
+    $nodeName = $buffer[0];
+
+    rowLayout -numberOfColumns 2 -columnWidth2 139 250 inBody_Layout;
+    text -w 105
+         -h 20
+         -vis 1
+         -label "In Body"
+         -align "right"
+         -font "plainLabelFont" ;
+    python("AETemplateHelper.build_qt_widget('inBody_Layout', '" + $nodeName + "', 'mesh', 'inBody', 'worldMesh', 'SwitchToMeshMode')");
+    setParent..;
+
+}
+global proc AETN_BindTemplate_InBodyUpdate(string $nodeName)
+{
+    string $buffer[];
+    tokenize($nodeName, ".", $buffer);
+    $nodeName = $buffer[0];
+    string $parent = "inBody_Layout";
+    python("AETemplateHelper.update_qt_widget('inBody_Layout', '" + $nodeName + "', 'mesh', 'inBody', 'worldMesh', 'SwitchToMeshMode')");
+}
+
+global proc AETN_BindTemplate_ReCalcRestStateBtnPushed(string $node)
+{
+    print $node;
+}
+
+global proc AETN_BindTemplate_ReCalcRestStateBuild(string $param)
+{
+        setUITemplate -pst attributeEditorTemplate;
+        {
+            string $tokens[];
+            tokenize $param "." $tokens;
+            string $node = $tokens[0];
+
+            button -l   "Re Calculate Rest State"
+                   -bgc 0.4 0.3 0.3
+                   -c   ("AETN_BindTemplate_ReCalcRestStateCmd " + $node) AETN_BindTemplate_ReCalcRestStateBtn;
+        }
+        setUITemplate -ppt;
+
+}
+global proc AETN_BindTemplate_ReCalcRestStateUpdate(string $param)
+{
+    string $tokens[];
+    tokenize $param "." $tokens;
+    string $node = $tokens[0];
+
+    button -e -c ("AETN_BindTemplate_ReCalcRestStateCmd " + $node) AETN_BindTemplate_ReCalcRestStateBtn;
+}
+global proc AETN_BindTemplate_ReCalcRestStateCmd(string $node)
+{
+    setAttr ($node + ".calcRestState") true;
+}
+
+
+
+
+// main //
+global proc AETN_BindTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		editorTemplate -beginLayout "Sources" -collapse 0;
+		{
+            editorTemplate -l "seed"	                -ac "sidSeed";
+            editorTemplate -callCustom "AETN_BindTemplate_InSourceBuild" "AETN_BindTemplate_InSourceUpdate" "";
+		}
+        editorTemplate -endLayout;
+		editorTemplate -beginLayout "Status" -collapse 0;
+		{
+            editorTemplate -l "In Time"	                -ac "inTime";
+            editorTemplate -ccu AETN_BindTemplate_FileBrowerBuild AETN_BindTemplate_FileBrowerUpdate "fileName";
+			editorTemplate -ccu AETN_BindTemplate_InBodyBuild AETN_BindTemplate_InBodyUpdate "inBody";
+
+            editorTemplate -ccu AETN_BindTemplate_ReCalcRestStateBuild AETN_BindTemplate_ReCalcRestStateUpdate $node;
+
+
+		}
+        editorTemplate -endLayout;
+
+        editorTemplate -endLayout;
+		editorTemplate -addExtraControls;
+	}
+	editorTemplate -endScrollLayout;
+}

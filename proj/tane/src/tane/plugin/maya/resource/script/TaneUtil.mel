@@ -1,0 +1,292 @@
+// Created by dohyeon.yang on 9/20/17.
+//----------------------------------------------- Open Tane Source Manger
+global proc TN_OpenTaneSourceManger()
+{
+    python("import TaneUtil; TaneUtil.OpenTaneSourceManger();");
+}
+//----------------------------------------------- TN_ExportCache Helper
+global proc TN_ExportCache_CacheTypeChanged()
+{
+    int $cachetype = `radioButtonGrp -q -select TN_ExportCache_CacheType_RadioButtonGrp_Item`;
+    //print ($cachetype + "\n");
+    if($cachetype == 1)
+    {
+        dimWhen -true SomethingSelected TN_ExportCache_StartEnd_FloatFieldGrp_Item;
+        dimWhen -true SomethingSelected TN_ExportCache_StepSize_TextField_Item;
+        dimWhen -true SomethingSelected TN_ExportCache_StepSize_FloatField_Item;
+
+    }
+    if($cachetype == 2)
+    {
+        dimWhen -false SomethingSelected TN_ExportCache_StartEnd_FloatFieldGrp_Item;
+        dimWhen -false SomethingSelected TN_ExportCache_StepSize_TextField_Item;
+        dimWhen -false SomethingSelected TN_ExportCache_StepSize_FloatField_Item;
+    }
+
+}
+global proc TN_ExportCache_UICreate(string $parent)
+{
+    //print "TN_ExportCache_UICreate\n";
+	setParent $parent;
+	columnLayout -adjustableColumn true;
+
+	frameLayout -collapse 0 -collapsable true
+				-marginWidth 20 -marginHeight 4
+				-label "Export Options";
+    	columnLayout -adjustableColumn true -rs 4;
+            //-----------------------------------------create export cache type
+            radioButtonGrp  -numberOfRadioButtons 2
+                            -label "Cache Type"
+                            -labelArray2 "Static" "Dynamic"
+                            -vertical
+                            -select 1
+                            TN_ExportCache_CacheType_RadioButtonGrp_Item
+                            ;
+            //-----------------------------------------create start/end
+            float $minFrame = `playbackOptions -q -min`;
+            float $maxFrame = `playbackOptions -q -max`;
+            floatFieldGrp   -numberOfFields 2
+                            -label "Start/End"
+                            -value1 $minFrame
+                            -value2 $maxFrame
+                            -pre 1
+                            TN_ExportCache_StartEnd_FloatFieldGrp_Item
+                            ;
+            //-----------------------------------------create stepsize
+			rowLayout -w 300 -nc 3 -cw3 100 50 50;
+            text -label "Step Size" -align "right" -width 140 TN_ExportCache_StepSize_TextField_Item;
+            floatField      -minValue 0.0
+                            -maxValue 1.0
+                            -value 1.0
+                            -pre 1
+                            -w 80
+                            TN_ExportCache_StepSize_FloatField_Item
+                            ;
+            setParent ..;
+        setParent ..;
+    setParent ..;
+    TN_ExportCache_CacheTypeChanged();
+}
+global proc TN_ImportCache_UIInit(string $parent, string $filterType)
+{
+    //print "TN_ImportCache_UIInit\n";
+    //-----------------------------------------init export cache type
+    if( !`optionVar -exists "TN_ExportCache_CacheType"` )
+    {
+        // 1 : static  cache type
+        // 2 : dynamic cache type
+        optionVar -iv "TN_ExportCache_CacheType" 0 ;
+    }
+    int $cachetype= `optionVar -query "TN_ExportCache_CacheType"`;
+    radioButtonGrp -edit -cc TN_ExportCache_CacheTypeChanged    TN_ExportCache_CacheType_RadioButtonGrp_Item;
+    radioButtonGrp -edit -select $cachetype                     TN_ExportCache_CacheType_RadioButtonGrp_Item;
+    //print ("$cachetype = " + $cachetype + "\n");
+
+
+    //-----------------------------------------init start/end
+    if( !`optionVar -exists "TN_ExportCache_Start"` )
+    {
+        float $minFrame = `playbackOptions -q -min`;
+        optionVar -fv "TN_ExportCache_Start" $minFrame;
+    }
+    if( !`optionVar -exists "TN_ExportCache_End"` )
+    {
+        float $maxFrame = `playbackOptions -q -max`;
+        optionVar -fv "TN_ExportCache_End" $maxFrame;
+    }
+    float $start    = `optionVar -query "TN_ExportCache_Start"`;
+    float $end      = `optionVar -query "TN_ExportCache_End"`;
+	floatFieldGrp -edit -value1 $start TN_ExportCache_StartEnd_FloatFieldGrp_Item;
+	floatFieldGrp -edit -value2 $end   TN_ExportCache_StartEnd_FloatFieldGrp_Item;
+    //print ("$start = " + $start + "\n");
+    //print ("$end   = " + $end   + "\n");
+
+    //-----------------------------------------init step size
+    if( !`optionVar -exists "TN_ExportCache_StepSize"` )
+    {
+        optionVar -fv "TN_ExportCache_StepSize" 1.0;
+    }
+    float $stepsize = `optionVar -query "TN_ExportCache_StepSize"`;
+    floatField -edit -value $stepsize TN_ExportCache_StepSize_FloatField_Item;
+    //print ("$stepsize    = " + $stepsize   + "\n");
+
+    TN_ExportCache_CacheTypeChanged();
+}
+global proc TN_ImportCache_UICommit(string $parent)
+{
+    //print "TN_ImportCache_UICommit\n";
+    //-----------------------------------------commit export cache type
+    int $cachetype = `radioButtonGrp -q -select TN_ExportCache_CacheType_RadioButtonGrp_Item`;
+    optionVar -iv "TN_ExportCache_CacheType" $cachetype;
+    //print ("$cachetype  = " + $cachetype + "\n");
+
+    //-----------------------------------------commit start/end
+	float $start = `floatFieldGrp -q -value1 TN_ExportCache_StartEnd_FloatFieldGrp_Item`;
+	float $end   = `floatFieldGrp -q -value2 TN_ExportCache_StartEnd_FloatFieldGrp_Item`;
+    optionVar -fv "TN_ExportCache_Start"    $start;
+    optionVar -fv "TN_ExportCache_End"      $end;
+    //print ("$start = " + $start + "\n");
+    //print ("$end   = " + $end   + "\n");
+
+    //-----------------------------------------commit step size
+	float $stepsize = `floatField -q -value TN_ExportCache_StepSize_FloatField_Item`;
+    optionVar -fv "TN_ExportCache_StepSize" $stepsize;
+    //print ("$stepsize    = " + $stepsize   + "\n");
+}
+
+//----------------------------------------------- Pre-Render Mel
+global proc TN_PreRenderMel()
+{
+    python("import TaneUtil; TaneUtil.TanePreRenderMel();");
+}
+
+//----------------------------------------------- Post-Render Mel
+global proc TN_PostRenderMel()
+{
+    python("import TaneUtil; TaneUtil.TanePostRenderMel();");
+}
+//----------------------------------------------- Open Tane Frustum Culling Window
+global proc TN_OpenFrustumCulling()
+{
+    print "TN_OpenFrustumCulling\n";
+    //python("import TaneUtil; TaneUtil.OpenFrustumCullingWindow();)";
+}
+
+global proc string GetSelectedTN_PlacerMPxNode()
+{
+	string $nodes[] = `ls -sl`;
+
+	// it's possible for there to be multiple placer nodes in a network
+	if( size( $nodes ) != 1 )
+	{
+		TNPrintError( "Select only one TN_PlacerMPxNode." );
+	}
+
+	if( `nodeType( $nodes[0] )` != "TN_PlacerMPxNode" )
+	{
+		TNPrintError( "Select the TN_PlacerMPxNode node." );
+	}
+
+	string $TN_PlacerMPxNode = $nodes[0];
+
+	return $TN_PlacerMPxNode;
+
+}
+
+global proc UpdateTN_PlacerMPxNodeIsAppend()
+{
+	setAttr "TN_PlacerMPxNode1.isAppend" 1;
+	refresh;
+}
+
+global proc string CreateTN_PlacerMPxLocatorNode()
+{
+	string $TN_PlacerMPxLocatorNode = `createNode TN_PlacerMPxLocatorNode`;
+	select $TN_PlacerMPxLocatorNode;
+	return $TN_PlacerMPxLocatorNode;
+}
+
+global proc DeleteTN_PlacerMPxLocatorNode( string $TN_PlacerMPxLocatorNode )
+{
+	// Get connected transform node
+	string $children[] = `listConnections -t transform $TN_PlacerMPxLocatorNode`;
+	delete $TN_PlacerMPxLocatorNode;
+	for( $child in $children )
+	{
+		print $child;
+		delete $child;
+	}
+}
+
+global proc int TN_PlacerMPxContextGetTimeSeed()
+{
+	int $h = `date -format hh`;
+	int $m = `date -format mm`;
+	int $s = `date -format ss`;
+
+	int $seed = 11 * ( 3*$h + 9 * ( 5*$m + 7*$s ) );
+
+	return $seed;
+}
+
+global proc TN_TextBarNew( string $title )
+{
+	string $node[]; tokenize( $title, ".", $node );
+	setUITemplate -pst attributeEditorTemplate;
+		text -l $node[1] -bgc 0.2 0.2 0.2;
+	setUITemplate -ppt;
+}
+
+global proc TN_TextBarReplace( string $title )
+{
+}
+
+//----------------------------------------------------------------FileDialog
+global proc TN_LoadFile( string $attr, string $textField, string $filter )
+{
+	string $file[] = `fileDialog2 -fm 1 -ds 1 -ff $filter`;
+	if( !size($file) ) { return; }
+	setAttr -type "string" $attr $file[0];
+	textField -e -tx `getAttr $attr` $textField;
+}
+
+global proc TN_RegisterFileDialog(string $label, string $attr, string $filefilter)
+{
+	text -label $label;
+
+	string $cmd;
+	//set field
+	//print ($attr + "\n");
+	string $mapPath = `getAttr $attr`;
+	string $tfName = `textField -ed 1 -tx $mapPath`;
+	//print ($tfName + "\n");
+
+	connectControl $tfName $attr;
+
+	//$cmd =  "$tfval  = `textField -q -tx " + $tfName + "`;";
+	//$cmd += "setAttr -type \"string\" " + $attr + " $tfval;";
+	//textField -edit -enterCommand $cmd $tfName;
+	
+	//set btn
+	$cmd = "TN_LoadFile ";
+	$cmd += ($attr + " ");
+	$cmd += ($tfName + " ");
+	$cmd += ("\"" + $filefilter + "\"; refresh;");
+	
+	string $btnName = `symbolButton -image "navButtonBrowse.xpm" -c $cmd`;
+}
+
+
+global proc int TN_IsVisible( string $node )
+{
+    if ( !`objExists $node` )
+    {
+        return false;
+    }
+    if ( !`attributeQuery -node $node -exists "visibility"` )
+    {
+        return false;
+    }
+
+    int $visible = `getAttr ( $node + ".visibility" )`;
+    if ( `attributeQuery -node $node -exists "intermediateObject"` )
+    {
+      $visible = $visible && !`getAttr ( $node + ".intermediateObject" )`;
+    }
+
+    if ( `attributeQuery -node $node -exists "overrideEnabled"` && `getAttr ( $node + ".overrideEnabled" )` )
+    {
+        $visible = $visible && `getAttr ( $node + ".overrideVisibility" )`;
+    }
+
+    if ( $visible )
+    {
+        string $parents[] = `listRelatives -parent $node`;
+        if ( `size $parents` > 0 )
+        {
+            $visible = $visible && nodeIsVisible( $parents[0] );
+        }
+    }
+    return $visible;
+}
+

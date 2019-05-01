@@ -1,0 +1,58 @@
+//--------------------------------------------------------------------------- Use ColorMode Changed
+global proc TN_Tane_ColorModeChanged(string $node)
+{
+	int $colorMode = `getAttr ($node+".colorMode")`;
+	if($colorMode == 0)
+	{
+		editorTemplate -dc $node "color" 0;
+	}
+	else
+	{
+		editorTemplate -dc $node "color" 1;
+	}
+}
+
+// main //
+global proc AETN_TaneTemplate( string $node )
+{
+	editorTemplate -beginScrollLayout;
+	{
+		//editorTemplate -beginLayout "Status" -collapse 0;
+		//{
+ 		//	editorTemplate -l "Number of points"	    -ac "npoints";
+        //	setAttr -lock true ($node+".npoints");
+		//}
+        //editorTemplate -endLayout;
+
+		editorTemplate -beginLayout "Display" -collapse 0;
+		{
+ 			editorTemplate -l "Point Size"	        -ac "pointSize";
+ 			editorTemplate -l "Display Mode"	    -ac "displayMode";
+ 			editorTemplate -as;
+ 			editorTemplate -l "Color Mode"	        -ac "colorMode" TN_Tane_ColorModeChanged;
+ 			editorTemplate -l "Color"	            -ac "color";
+
+ 			editorTemplate -l "Draw Bound"	        -ac "drawBound";
+ 			editorTemplate -l "Double Sided"	    -ac "doubleSided";
+ 			editorTemplate -l "No Lighting"	        -ac "noLighting";
+ 			editorTemplate -l "No Wire"	            -ac "noWire";
+
+ 			editorTemplate -beginLayout "Viewport2 Configure" -collapse 1;
+            {
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "ICR";
+            	editorTemplate -l "Enable Icr"	    -ac "enableIcr";
+
+            	editorTemplate -ccu TN_TextBarNew TN_TextBarReplace "LOD";
+            	editorTemplate -l "Enable LOD"	    -ac "enableLOD";
+            	editorTemplate -l "Min Distance"	-ac "minDistance";
+            	editorTemplate -l "Max Distance"	-ac "maxDistance";
+            	editorTemplate -l "Override Mask"	-ac "overrideMask";
+            }
+            editorTemplate -endLayout;
+		}
+        editorTemplate -endLayout;
+	}
+
+	editorTemplate -addExtraControls;
+	editorTemplate -endScrollLayout;
+}

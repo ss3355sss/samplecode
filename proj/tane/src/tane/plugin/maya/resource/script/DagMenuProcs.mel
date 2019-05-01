@@ -1,0 +1,62 @@
+//----------------------------------------------- TaneMPxSurfaceShape DagMenuProc
+global proc TN_TaneDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $childLists = `listRelatives -s $child`;
+    $shape      = $childLists[0];
+
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode" -rp "NE" -c $cmd;
+
+    $cmd = "selectMode -component;";
+    menuItem -l "Point Selection Mode\n" -rp "W" -c $cmd;
+
+    //$cmd = ("select " + $shape + ";");
+    //$cmd += "$ctx = `TN_PickingContextCmd`;";
+    //$cmd += "setToolTo($ctx);";
+    //menuItem -l "Picking Selection Mode\n" -rp "S" -c $cmd;
+
+    $cmd = ("TN_ClearRenderableTweak -nn " + $shape);
+    menuItem -l "Clear Renderable Tweaks\n" -rp "E" -c $cmd;
+
+    $cmd = ("TN_ClearTransformTweak -nn " + $shape);
+    menuItem -l "Clear Tweaks\n"            -rp "SE" -c $cmd;
+}
+
+//----------------------------------------------- TN_AbcProxy DagMenuProc
+global proc TN_AbcProxyDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode\n" -rp "NE" -c $cmd;
+}
+//----------------------------------------------- TN_Abc2Proxy DagMenuProc
+global proc TN_Abc2ProxyDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode\n" -rp "NE" -c $cmd;
+}
+//----------------------------------------------- TN_UsdProxy DagMenuProc
+global proc TN_UsdProxyDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode\n" -rp "NE" -c $cmd;
+}
+
+//----------------------------------------------- TN_UsdHd DagMenuProc
+global proc TN_UsdHdProxyDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode\n" -rp "NE" -c $cmd;
+}
+
+//----------------------------------------------- TN_VdbProxy DagMenuProc
+global proc TN_VdbProxyDagMenuProc( string $parent, string $child )
+{
+    setParent -m $parent;
+    $cmd = "selectMode -object;";
+    menuItem -l "Object Mode\n" -rp "NE" -c $cmd;
+}
